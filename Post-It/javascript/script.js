@@ -1,125 +1,128 @@
-let noteId = 0;
-let occupiedPositions = [];
+let idNota = 0;
+let posicoesOcupadas = [];
 
-function createStickyNote() {
+function criarNotaAdesiva() {
     const container = document.getElementById("container");
-    const note = document.createElement("div");
-    note.className = "note";
-    note.id = "note_" + noteId;
-    note.innerHTML = `
-        <div class="header">
-            <span class="delete" onclick="deleteStickyNote('${note.id}')">Delete</span>
+    const nota = document.createElement("div");
+    nota.className = "nota";
+    nota.id = "nota_" + idNota;
+    nota.innerHTML = `
+        <div class="cabecalho">
+            <span class="apagar" onclick="apagarNotaAdesiva('${nota.id}')">Apagar</span>
         </div>
-        <div class="content" contenteditable="true" onclick="hidePlaceholder(this)">Click and type here!</div>
-        <input type="color" class="color-picker" onchange="changeNoteColor('${note.id}', this.value)">
-    `
-     saveNotesToLocalStorage();
+        <div class="conteudo" contenteditable="true" onclick="ocultarPlaceholder(this)">Clique e digite aqui!</div>
+        <input type="color" class="seletor-cor" onchange="mudarCorNota('${nota.id}', this.value)">
+    `;
+    salvarNotasNoLocalStorage();
 
-    noteId++;
-    note.addEventListener("mousedown", startDrag);
-    container.appendChild(note);
-    saveNotesToLocalStorage();
+    idNota++;
+    nota.addEventListener("mousedown", iniciarArrasto);
+    container.appendChild(nota);
+    salvarNotasNoLocalStorage();
 }
 
-function hidePlaceholder(element) {
-    if (element.innerText === "Click and type here!") {
-        element.innerText = "";
-       saveNotesToLocalStorage();
+function ocultarPlaceholder(elemento) {
+    if (elemento.innerText === "Clique e digite aqui!") {
+        elemento.innerText = "";
+        salvarNotasNoLocalStorage();
     }
 }
 
-function startDrag(event) {
-    const note = event.target;
-    const mouseX = event.clientX;
-    const mouseY = event.clientY;
-    const noteX = note.offsetLeft;
-    const noteY = note.offsetTop;
-    const offsetX = mouseX - noteX;
-    const offsetY = mouseY - noteY;
+function iniciarArrasto(evento) {
+    const nota = evento.target;
+    const mouseX = evento.clientX;
+    const mouseY = evento.clientY;
+    const notaX = nota.offsetLeft;
+    const notaY = nota.offsetTop;
+    const offsetX = mouseX - notaX;
+    const offsetY = mouseY - notaY;
 
-    document.addEventListener("mousemove", dragNote);
-    document.addEventListener("mouseup", stopDrag);
-    saveNotesToLocalStorage();
+    document.addEventListener("mousemove", arrastarNota);
+    document.addEventListener("mouseup", pararArrasto);
+    salvarNotasNoLocalStorage();
 
-    function dragNote(event) {
-        if (event.target.tagName.toLowerCase() === 'input' || event.target.tagName.toLowerCase() === 'textarea') {
-            return; // Prevent dragging if the target is an input element
+    function arrastarNota(evento) {
+        if (
+            evento.target.tagName.toLowerCase() === "input" ||
+            evento.target.tagName.toLowerCase() === "textarea"
+        ) {
+            return; // Impede o arrasto se o alvo for um elemento de input
         }
-        event.preventDefault(); // Prevent text selection
-        const newNoteX = event.clientX - offsetX;
-        const newNoteY = event.clientY - offsetY;
-        note.style.left = newNoteX + "px";
-        note.style.top = newNoteY + "px";
-        saveNotesToLocalStorage();
+        evento.preventDefault(); // Impede a seleção de texto
+        const novaNotaX = evento.clientX - offsetX;
+        const novaNotaY = evento.clientY - offsetY;
+        nota.style.left = novaNotaX + "px";
+        nota.style.top = novaNotaY + "px";
+        salvarNotasNoLocalStorage();
     }
 
-    function stopDrag() {
-        document.removeEventListener("mousemove", dragNote);
-        document.removeEventListener("mouseup", stopDrag);
-        saveNotesToLocalStorage();
-    }
-}
-
-function deleteStickyNote(noteId) {
-    const deleteButton = event.target;
-    if (deleteButton.classList.contains("delete")) {
-        const note = deleteButton.parentNode.parentNode;
-        note.remove();
-        saveNotesToLocalStorage();
+    function pararArrasto() {
+        document.removeEventListener("mousemove", arrastarNota);
+        document.removeEventListener("mouseup", pararArrasto);
+        salvarNotasNoLocalStorage();
     }
 }
 
-function resetNotes() {
+function apagarNotaAdesiva(idNota) {
+    const botaoApagar = event.target;
+    if (botaoApagar.classList.contains("apagar")) {
+        const nota = botaoApagar.parentNode.parentNode;
+        nota.remove();
+        salvarNotasNoLocalStorage();
+    }
+}
+
+function resetarNotas() {
     const container = document.getElementById("container");
     container.innerHTML = "";
-    noteId = 0;
-    occupiedPositions = [];
-    localStorage.removeItem("stickyNotes");
-    saveNotesToLocalStorage();
+    idNota = 0;
+    posicoesOcupadas = [];
+    localStorage.removeItem("notasAdesivas");
+    salvarNotasNoLocalStorage();
 }
 
-function saveNotesToLocalStorage() {
-    const notes = document.getElementsByClassName("note");
-    const notesArray = Array.from(notes).map(note => ({
-        id: note.id,
-        content: note.querySelector(".content").innerText,
-        top: note.style.top,
-        left: note.style.left,
-        color: note.querySelector(".color-picker").value // Retrieve color value from the color picker
+function salvarNotasNoLocalStorage() {
+    const notas = document.getElementsByClassName("nota");
+    const arrayNotas = Array.from(notas).map(nota => ({
+        id: nota.id,
+        conteudo: nota.querySelector(".conteudo").innerText,
+        topo: nota.style.top,
+        esquerda: nota.style.left,
+        cor: nota.querySelector(".seletor-cor").value // Obtém o valor da cor do seletor de cor
     }));
-    localStorage.setItem("stickyNotes", JSON.stringify(notesArray));
+    localStorage.setItem("notasAdesivas", JSON.stringify(arrayNotas));
 }
 
-function loadNotesFromLocalStorage() {
-    const savedNotes = localStorage.getItem("stickyNotes");
-    if (savedNotes) {
-        const notesArray = JSON.parse(savedNotes);
-        notesArray.forEach(note => {
+function carregarNotasDoLocalStorage() {
+    const notasSalvas = localStorage.getItem("notasAdesivas");
+    if (notasSalvas) {
+        const arrayNotas = JSON.parse(notasSalvas);
+        arrayNotas.forEach(nota => {
             const container = document.getElementById("container");
-            const newNote = document.createElement("div");
-            newNote.className = "note";
-            newNote.id = note.id;
-            newNote.innerHTML = `
-                <div class="header">
-                    <button class="delete" onclick="deleteStickyNote('${note.id}')" contenteditable="false">Delete</button>
+            const novaNota = document.createElement("div");
+            novaNota.className = "nota";
+            novaNota.id = nota.id;
+            novaNota.innerHTML = `
+                <div class="cabecalho">
+                    <button class="apagar" onclick="apagarNotaAdesiva('${nota.id}')" contenteditable="false">Apagar</button>
                 </div>
-                <div class="content" contenteditable="true">${note.content}</div>
-                <input type="color" class="color-picker" onchange="changeNoteColor('${note.id}', this.value)" value="${note.color}">
+                <div class="conteudo" contenteditable="true">${nota.conteudo}</div>
+                <input type="color" class="seletor-cor" onchange="mudarCorNota('${nota.id}', this.value)" value="${nota.cor}">
             `;
-            newNote.style.top = note.top;
-            newNote.style.left = note.left;
-            newNote.style.backgroundColor = note.color; // Set background color
-            newNote.addEventListener("mousedown", startDrag);
-            container.appendChild(newNote);
+            novaNota.style.top = nota.topo;
+            novaNota.style.left = nota.esquerda;
+            novaNota.style.backgroundColor = nota.cor; // Define a cor de fundo
+            novaNota.addEventListener("mousedown", iniciarArrasto);
+            container.appendChild(novaNota);
         });
     }
 }
 
-function changeNoteColor(noteId, color) {
-    const note = document.getElementById(noteId);
-    note.style.backgroundColor = color;
-    saveNotesToLocalStorage();
+function mudarCorNota(idNota, cor) {
+    const nota = document.getElementById(idNota);
+    nota.style.backgroundColor = cor;
+    salvarNotasNoLocalStorage();
 }
 
-window.addEventListener("DOMContentLoaded", loadNotesFromLocalStorage);
+window.addEventListener("DOMContentLoaded", carregarNotasDoLocalStorage);
 
